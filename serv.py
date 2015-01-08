@@ -8,7 +8,11 @@ import socket
 import os
 
 
-class bcolors:
+class Bcolors:
+
+    def __init__(self):
+        pass
+
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
     OKGREEN = '\033[92m'
@@ -28,8 +32,9 @@ class Server(ssh.ServerInterface):
             if comprobacion[0] == username and comprobacion[1] == password:
                 return ssh.AUTH_SUCCESSFUL
         else:
-            print "Intento de usuario "+username+ " no auterizado"
+            print "Intento de usuario " + username + " no auterizado"
             return ssh.AUTH_FAILED
+
     def check_channel_request(self, kind, chanid):
         if kind == 'session':
             return ssh.OPEN_SUCCEEDED
@@ -51,7 +56,7 @@ class Server(ssh.ServerInterface):
     except IOError as e:
         f = open('usuarios.txt', 'w')
         f.write("test test")
-        usuarios = [['test','test']]
+        usuarios = [['test', 'test']]
         f.close()
 
 
@@ -59,19 +64,18 @@ def windows_shell(chan):
 
     chan.send("---Escribe escribe---.\r\n")
 
-    def writeall(sock):
+    def writeall(sockit):
         while True:
-            data = sock.recv(256)
+            data = sockit.recv(256)
             if data == '\r' or '\n' == data:
                 chan.send("\r\n")
                 print ""
-            chan.send(bcolors.OKGREEN+data+bcolors.ENDC)
             sys.stdout.write(data)
+            chan.send(Bcolors.OKGREEN+data+Bcolors.ENDC)
+
 
     writer = threading.Thread(target=writeall, args=(chan,))
     writer.start()
-
-
 
 # Inicializacion, binding al puerto 3000
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -81,25 +85,24 @@ sock.bind(('', 3000))
 if os.path.exists("id_rsa"):
     rsallave = ssh.RSAKey(filename="id_rsa")
 else:
-    print "Generando llave del servidor "+bcolors.FAIL+"NO LA PIERDAS"+bcolors.ENDC
+    print "Generando llave del servidor "+Bcolors.FAIL+"NO LA PIERDAS"+Bcolors.ENDC
     nuevallave = ssh.RSAKey.generate(1024)
     nuevallave.write_private_key(open("id_rsa", 'w'), password=None)
     rsallave = ssh.RSAKey(filename="id_rsa")
 
-def imprimir(conexiones):
+
+def imprimir(varios):
 
     while True:
 
         entrada = raw_input()
-        for conexion in conexiones:
-            conexion.send(bcolors.OKBLUE+entrada+bcolors.ENDC+"\n\r")
+        for uno in varios:
+            uno.send(Bcolors.OKBLUE+entrada+Bcolors.ENDC+"\n\r")
 
 
 conexiones = []
 responder = threading.Thread(target=imprimir, args=(conexiones,))
 responder.start()
-
-
 
 
 while True:
@@ -121,11 +124,8 @@ while True:
     if conexion is None:
         print "No conexion"
         sys.exit(1)
-    print "Autenticacion completa "+ t.get_username()
+    print "Autenticacion completa " + t.get_username()
 
     servidor.event.wait(10)
 
     windows_shell(conexion)
-
-
-
